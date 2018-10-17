@@ -2,6 +2,8 @@
 
 const Contact = use('App/Models/Contact')
 const User = use('App/Models/User')
+const StarContact = use('App/Models/StarContact')
+const { validate } = use('Validator')
 
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */
@@ -22,10 +24,17 @@ class ContactController {
    * @param {View} ctx.view
    */
   async index ({ request, response, auth }) {
-    const user = await User.find(auth.user.id)
-    const contacts = await user.contacts().fetch()
+    try {
+      const user = await User.find(auth.user.id)
+      const contacts = await user.contacts().fetch()
 
-    response.json(contacts)
+      response.json(contacts)
+    } catch(err) {
+      return response.status(400).json({
+        status: 'error',
+        message: 'Resource not found'
+      })
+    }
   }
 
   /**
@@ -50,25 +59,42 @@ class ContactController {
    * @param {Response} ctx.response
    */
   async store ({ request, response, auth }) {
-    const parameter = request.only(['fullname', 'email', 'telephone', 'address'])
+    // validate form input
+    const validation = await validate(request.all(), {
+      fullname: 'required',
+      email: 'required|email',
+      telephone: 'required',
+      address: 'required'
+    })
 
-    if (!parameter) {
-      return response.status(404).json({data: 'Invalid request'})
+    // show error messages upon validation fail
+    if (validation.fails()) {
+      return response.send(validation.messages())
     }
 
-    const contact = new Contact()
-    contact.fullname = parameter.fullname
-    contact.email = parameter.email
-    contact.telephone = parameter.telephone
-    contact.address = parameter.address
-    contact.user_id = auth.user.id
+    try {
+      const parameter = request.only(['fullname', 'email', 'telephone', 'address'])
 
-    await contact.save()
+      const contact = new Contact()
+      contact.fullname = parameter.fullname
+      contact.email = parameter.email
+      contact.telephone = parameter.telephone
+      contact.address = parameter.address
+      contact.user_id = auth.user.id
 
-    return response.status(201).json({
-      message: 'Contact created successfully',
-      data: contact
-    })
+      await contact.save()
+
+      return response.status(201).json({
+        message: 'Contact created successfully',
+        data: contact
+      })
+      
+    } catch (err) {
+      return response.status(400).json({
+        status: 'error',
+        message: 'Could not create contact'
+      })
+    }
   }
 
   /**
@@ -115,21 +141,25 @@ class ContactController {
     const parameter = request.only(['fullname','email', 'telephone', 'address'])
     const contact = await Contact.find(params.id)
 
-    if (!parameter) {
-      return response.status(404).json({data: 'Invalid request'})
+    try {
+      contact.address = parameter.address
+      contact.email = parameter.email
+      contact.telephone = parameter.telephone
+      contact.fullname = parameter.fullname
+
+      await contact.status
+
+      return response.status(201).json({
+        message: 'Updated successfully',
+        data: contact
+      })
+
+    } catch(err) {
+      return response.status(400).json({
+        status: 'error',
+        message: 'Could not update contact'
+      })
     }
-
-    contact.address = parameter.address
-    contact.email = parameter.email
-    contact.telephone = parameter.telephone
-    contact.fullname = parameter.fullname
-
-    await contact.status
-
-    return response.status(201).json({
-      message: 'Updated successfully',
-      data: contact
-    })
   }
 
   /**
@@ -151,30 +181,47 @@ class ContactController {
     return response.status(201).json({data: 'Deleted successfully'}) 
   }
 
-
+  /**
+   * Star a single contact with id.
+   * DELETE contacts/:id
+   *
+   * @param {object} ctx
+   * @param {Request} ctx.request
+   * @param {Response} ctx.response
+   */
   async starContact({params, request, response, auth}) {
-    const contact = await Contact.find(params.id)
+    try {
+      const contact = new StarContact()
+      contact.user_id = auth.user.id
+      contact.contact_id = params.id
+      await contact.save()
 
-    if (!contact) {
-      return response.status(404).json({data: 'Resource not found'})
+      return response.json({
+        message: 'Contact starred successfully'
+      })
+    } catch (err) {
+      return response.status(400).json({
+        status: 'error',
+        message: 'Could not star contact'
+      })
     }
-    contact.is_starred = true;
-    await contact.save()
-
-    return response.json({message: 'Contact starred successfully'})
   }
 
   /** [starredContacts list of contacts starred by a user]
    * 
    */
   async starredContacts({request, response, auth}) {
-    const user = await User.find(auth.user.id)
-    const contacts = await user
-      .contacts()
-      .where('is_starred', 1)
-      .fetch()
+    try {
+      const user = await User.find(auth.user.id)
+      const contacts = await user.starred().fetch()
 
-    return response.json(contacts)
+      response.json(contacts)
+    } catch(err) {
+      return response.status(400).json({
+        status: 'error',
+        message: 'Resource not found'
+      })
+    }
   }
 }
 

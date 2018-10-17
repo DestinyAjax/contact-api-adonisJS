@@ -38,6 +38,10 @@ class User extends Model {
   contacts () {
     return this.hasMany('App/Models/Contact', 'id', 'user_id')
   }
+
+  starred () {
+    return this.hasMany('App/Models/StarContact', 'id', 'user_id')
+  }
 }
 
 module.exports = User

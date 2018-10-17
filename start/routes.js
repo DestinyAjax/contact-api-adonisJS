@@ -19,17 +19,17 @@ const Route = use('Route')
 /** route endpoint for users */
 Route.group(() => {
   Route.get('users', 'UserController.index')
-  Route.post('users/signup', 'UserController.signup').middleware(['guest'])
-  Route.post('users/signin', 'UserController.signin').middleware(['guest'])
+  Route.post('users/signup', 'UserController.signup')
+  Route.post('users/signin', 'UserController.signin')
 }).prefix('api/v1')
 
 /** route endpoint for contact */
 Route.group(() => {
-  Route.get('contacts', 'ContactController.index').middleware(['auth'])
-  Route.get('contact/:id', 'ContactController.show').middleware(['auth'])
-  Route.post('contact', 'ContactController.store').middleware(['auth'])
-  Route.put('contacts/:id', 'ContactController.update').middleware(['auth'])
-  Route.delete('contacts/:id', 'ContactController.destroy').middleware(['auth'])
-  Route.patch('contacts/:id/star', 'ContactController.starContact').middleware(['auth'])
-  Route.get('starred/contacts', 'ContactController.starredContacts').middleware(['auth'])
-}).prefix('api/v1')
+  Route.get('contacts', 'ContactController.index')
+  Route.get('contact/:id', 'ContactController.show')
+  Route.post('contact', 'ContactController.store')
+  Route.put('contacts/:id', 'ContactController.update')
+  Route.delete('contacts/:id', 'ContactController.destroy')
+  Route.patch('contacts/:id/star', 'ContactController.starContact')
+  Route.get('starred/contacts', 'ContactController.starredContacts')
+}).prefix('api/v1').middleware(['auth'])

@@ -14,26 +14,26 @@ class UserController {
   async signup({request, response, auth}) {
   	
   	// validate form input
-	const validation = await validate(request.all(), {
-	  email: 'required|email:unique:users',
-	  username: 'required|unique:users',
-	  password: 'required'
-	})
+		const validation = await validate(request.all(), {
+			email: 'required|email:unique:users',
+			username: 'required|unique:users',
+			password: 'required'
+		})
 
-	// show error messages upon validation fail
-	if (validation.fails()) {
-	  return response.send(validation.messages())
-	}
-	
-	const user = new User()
-	user.email = request.input('email')
-	user.username = request.input('username')
-	user.password = request.input('password')
-	await user.save()
+		// show error messages upon validation fail
+		if (validation.fails()) {
+			return response.send(validation.messages())
+		}
+		
+		const user = new User()
+		user.email = request.input('email')
+		user.username = request.input('username')
+		user.password = request.input('password')
+		await user.save()
 
-	const data = await auth.generate(user)
-	
-	return response.json(data)
+		const data = await auth.generate(user)
+		
+		return response.json(data)
   }
 
   async signin({request, response, auth}) {
